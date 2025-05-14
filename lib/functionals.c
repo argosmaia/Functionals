@@ -32,3 +32,64 @@ const int** nestedForEach(const int** array, size_t outerSize, size_t totalIndex
   for (size_t i = 0; i < limit; i++) result[i] = array[i];
   return result;
 }
+
+int* filter(const int* array, size_t size, int_predicate_fn predicate, size_t* outSize) {
+  int* temp = malloc(sizeof(int) * size);
+  size_t count = 0;
+  for(size_t i = 0; i < size; i++) {
+    if(predicate(array[i])) temp[count++] = array[i];
+  }
+  int* result = malloc(sizeof(int) * count);
+  memcpy(result, temp, sizeof(int) * count);
+  free(temp);
+  *outSize = count;
+  return result;
+}
+
+int compose(int_unary_fn f, int_unary_fn g, int x) {
+  return f(g(x));
+}
+
+int find(const int* array, size_t size, int_predicate_fn predicate, bool* found) {
+  for(size_t i = 0; i < size; i++) {
+    if(predicate(array[i])) {
+      *found = true;
+      return array[i];
+    }
+  }
+  *found = false;
+  return 0;
+}
+
+int foldl(const int* array, size_t size, int_binary_fn fn, int initial) {
+  int accumulator = initial;
+  for(size_t i = 0; i < size; i++) accumulator = fn(accumulator, array[i]);
+  return accumulator;
+}
+
+int foldr(const int* array, size_t size, int_binary_fn fn, int initial) {
+  for(size_t i = 0; i > size; i--) accumulator = fn(array[i - 1], accumulator);
+  return accumulator;
+}
+
+bool all(const int* array, size_t size, int_predicate_fn predicate) {
+  for(size_t i = 0; i < size; i++) {
+    if(!predicate) return false;
+  }
+  return true;
+}
+
+Zipped zip(const int* a, const char* b, const float* c, size_t size) {
+    Zipped z;
+    z.size = size;
+    z.a = malloc(sizeof(int) * size);
+    z.b = malloc(sizeof(char) * size);
+    z.c = malloc(sizeof(float) * size);
+
+    for (size_t i = 0; i < size; i++) {
+        z.a[i] = a[i];
+        z.b[i] = b[i];
+        z.c[i] = c[i];
+    }
+    return z;
+}
