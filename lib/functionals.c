@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "functionals.h"
 
 int* map(const int* array, size_t size, int_unary_fn fn) {
@@ -7,7 +8,7 @@ int* map(const int* array, size_t size, int_unary_fn fn) {
   if(!result) return NULL;
   for(size_t i = 0; i < size; i++) result[i] = fn(array[i]);
 
-  return result;
+  return result; //? (map(array, result, 0, size, fn), result);
 }
 
 // int_binary_fn fn é a função passada pelo reduce, ou soma, substrai, multiplica ou etc
@@ -40,6 +41,11 @@ int* filter(const int* array, size_t size, int_predicate_fn predicate, size_t* o
     if(predicate(array[i])) temp[count++] = array[i];
   }
   int* result = malloc(sizeof(int) * count);
+  if (!result) {
+    free(temp);
+    return NULL;
+  }
+
   memcpy(result, temp, sizeof(int) * count);
   free(temp);
   *outSize = count;
@@ -67,29 +73,51 @@ int foldl(const int* array, size_t size, int_binary_fn fn, int initial) {
   return accumulator;
 }
 
-int foldr(const int* array, size_t size, int_binary_fn fn, int initial) {
-  for(size_t i = 0; i > size; i--) accumulator = fn(array[i - 1], accumulator);
+int foldr(const int* array, ssize_t size, int_binary_fn fn, int initial) {
+  int accumulator = initial;
+  for (ssize_t i = size - 1; i >= 0; i--) accumulator = fn(array[i - 1], accumulator);
   return accumulator;
 }
 
 bool all(const int* array, size_t size, int_predicate_fn predicate) {
   for(size_t i = 0; i < size; i++) {
-    if(!predicate) return false;
+    if (!predicate(array[i])) return false;
   }
   return true;
 }
 
-Zipped zip(const int* a, const char* b, const float* c, size_t size) {
+Zipped zip(ZippedField* fields, size_t fieldNumbers, size_t elements) {
     Zipped z;
-    z.size = size;
-    z.a = malloc(sizeof(int) * size);
-    z.b = malloc(sizeof(char) * size);
-    z.c = malloc(sizeof(float) * size);
+    z.fieldNumbers = fieldNumbers;
+    z.elements = elements;
+    z.fields = malloc(sizeof(ZippedField) * fieldNumbers);
 
-    for (size_t i = 0; i < size; i++) {
-        z.a[i] = a[i];
-        z.b[i] = b[i];
-        z.c[i] = c[i];
+    for (size_t i = 0; i < fieldNumbers; i++) {
+        z.fields[i].name = fields[i].name;
+        z.fields[i].type = fields[i].type;
+
+        size_t sizeTypes = 0;
+        switch (fields[i].type) {
+          case TYPE_INT:   sizeTypes = sizeof(int); break;
+          case TYPE_SHORT_INT: sizeTypes = sizeof(short int); break;
+          case TYPE_UNSIGNED_SHORT_INT: sizeTypes = sizeof(unsigned short int); break;
+          case TYPE_UNSIGNED_INT: sizeTypes = sizeof(unsigned int); break;
+          case TYPE_LONG_INT: sizeTypes = sizeof(long int); break;
+          case TYPE_UNSIGNED_LONG_INT: sizeTypes = sizeof(unsigned long int); break;
+          case TYPE_UNSIGNED_LONG_LONG_INT: sizeTypes = sizeof(unsigned long long int); break;
+          case TYPE_FLOAT: sizeTypes = sizeof(float); break;
+          case TYPE_CHAR:  sizeTypes = sizeof(char); break;
+          case TYPE_SIGNED_CHAR: sizeTypes = sizeof(signed char); break;
+          case TYPE_UNSIGNED_CHAR: sizeTypes = sizeof(unsigned char); break;
+          case TYPE_DOUBLE: sizeTypes = sizeof(double); break;
+          case TYPE_LONG_DOUBLE: sizeTypes = sizeof(long double); break;
+          case TYPE_VOID: sizeTypes = sizeof(void); break;
+          default: sizeTypes = 1; break;
+        }
+
+        z.fields[i].data = malloc(sizeTypes * elements);
+        memcpy(z.fields[i].data, fields[i].data, sizeTypes * elements);
     }
+
     return z;
 }
